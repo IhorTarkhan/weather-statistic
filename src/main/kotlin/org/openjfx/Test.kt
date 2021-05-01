@@ -1,4 +1,4 @@
-package org.statistic.weather
+package org.openjfx
 
 import javafx.application.Application
 import javafx.scene.Scene
