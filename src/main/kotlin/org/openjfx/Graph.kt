@@ -7,7 +7,7 @@ import javafx.scene.chart.NumberAxis
 import javafx.scene.chart.XYChart
 
 class Graph(xTitle: String, yTitle: String, seriesTitle: String, chartsTitle: String) {
-    val lineChart: LineChart<String, Number>
+    val instance: LineChart<String, Number>
     private val series: XYChart.Series<String, Number>
 
     init {
@@ -15,10 +15,10 @@ class Graph(xTitle: String, yTitle: String, seriesTitle: String, chartsTitle: St
         val yAxis = createYAxis(yTitle)
         series = createSeries(seriesTitle)
 
-        lineChart = LineChart(xAxis, yAxis)
-        lineChart.title = chartsTitle
-        lineChart.animated = false
-        lineChart.data.add(series)
+        instance = LineChart(xAxis, yAxis)
+        instance.title = chartsTitle
+        instance.animated = false
+        instance.data.add(series)
     }
 
     fun addPoint(xValue: String, yValue: Int) {
