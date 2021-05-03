@@ -10,7 +10,7 @@ import javafx.scene.layout.GridPane
 import javafx.stage.Stage
 
 
-class HomePage(stage: Stage) {
+class HomePage(stage: Stage, width: Double, height: Double) {
     val root = createGrid()
     private var graphPage: GraphPage? = null
 
@@ -26,7 +26,7 @@ class HomePage(stage: Stage) {
             println(lastName.text)
             println(comment.text)
             graphPage = GraphPage()
-            stage.scene = Scene(graphPage?.root, 800.0, 600.0)
+            stage.scene = Scene(graphPage?.root, width, height)
         }
         clear.onMouseClicked = EventHandler {
             name.text = ""
