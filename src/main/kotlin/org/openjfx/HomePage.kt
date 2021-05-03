@@ -11,35 +11,40 @@ import javafx.scene.control.TextField
 import javafx.scene.input.KeyEvent
 import javafx.scene.layout.GridPane
 import javafx.stage.Stage
+import org.openjfx.util.UtilGson.Companion.gsonInstance
+import java.io.File
 
 
 class HomePage(stage: Stage, width: Double, height: Double) {
     val root = createGrid()
     private var graphPage: GraphPage? = null
+    private val jsonString: String = File("./src/main/resources/city.list.json").readText(Charsets.UTF_8)
+    private val cities =
+        gsonInstance.fromJson<List<Map<String, Any>>>(jsonString, List::class.java)
+
 
     init {
-        val name = createTextField("Enter your first name.", 0)
-        val lastName = createTextField("Enter your last name.", 1)
-        val comment = createTextField("Enter your comment.", 2)
+        val comboBox = createComboBox(cities.map { it["name"].toString() ?: "NaN" })
+        val dayBefore = createTextField("Enter count day before today", 1)
+        val dayAfter = createTextField("Enter count day after today", 2)
 
         val submit = createButton("Submit", 0)
         val clear = createButton("Clear", 1)
 
-        val comboBox = createComboBox(listOf("First", "Second", "Third"))
-        GridPane.setConstraints(comboBox, 2, 2)
-        root.children.add(comboBox)
-
         submit.onMouseClicked = EventHandler {
-            println(name.text)
-            println(lastName.text)
-            println(comment.text)
-            graphPage = GraphPage()
+            println(dayBefore.text)
+            println(dayAfter.text)
+            val coordinates = cities.first { it["name"] == comboBox.editor.text }["coord"] as Map<String, Double>
+            print(coordinates["lon"].toString() + "   " + coordinates["lat"].toString())
+
+            graphPage =
+                GraphPage(dayBefore.text.toLong(), dayAfter.text.toLong(), coordinates["lon"]!!, coordinates["lat"]!!)
             stage.scene = Scene(graphPage?.root, width, height)
         }
         clear.onMouseClicked = EventHandler {
-            name.text = ""
-            lastName.text = ""
-            comment.text = ""
+            comboBox.editor.text = ""
+            dayBefore.text = ""
+            dayAfter.text = ""
         }
     }
 
@@ -66,7 +71,7 @@ class HomePage(stage: Stage, width: Double, height: Double) {
         return button
     }
 
-    private fun createComboBox(data: List<String>, gridRow: Int = 2, gridColumn: Int = 2): ComboBox<String> {
+    private fun createComboBox(data: List<String>, gridRow: Int = 0, gridColumn: Int = 0): ComboBox<String> {
         val comboBox = ComboBox(FXCollections.observableArrayList(data))
         comboBox.isEditable = true
 
@@ -76,6 +81,7 @@ class HomePage(stage: Stage, width: Double, height: Double) {
         comboBox.addEventHandler(KeyEvent.KEY_RELEASED) {
             comboBox.items = data
                 .filter { it.toLowerCase().contains(comboBox.editor.text.toLowerCase()) }
+                .take(20)
                 .toCollection(FXCollections.observableArrayList())
             comboBox.show()
         }
