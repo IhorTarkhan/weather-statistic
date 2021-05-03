@@ -1,11 +1,14 @@
 package org.openjfx
 
 
+import javafx.collections.FXCollections
 import javafx.event.EventHandler
 import javafx.geometry.Insets
 import javafx.scene.Scene
 import javafx.scene.control.Button
+import javafx.scene.control.ComboBox
 import javafx.scene.control.TextField
+import javafx.scene.input.KeyEvent
 import javafx.scene.layout.GridPane
 import javafx.stage.Stage
 
@@ -15,12 +18,17 @@ class HomePage(stage: Stage, width: Double, height: Double) {
     private var graphPage: GraphPage? = null
 
     init {
-        val name = createTextField(root, "Enter your first name.", 0)
-        val lastName = createTextField(root, "Enter your last name.", 1)
-        val comment = createTextField(root, "Enter your comment.", 2)
+        val name = createTextField("Enter your first name.", 0)
+        val lastName = createTextField("Enter your last name.", 1)
+        val comment = createTextField("Enter your comment.", 2)
 
-        val submit = createButton(root, "Submit", 0)
-        val clear = createButton(root, "Clear", 1)
+        val submit = createButton("Submit", 0)
+        val clear = createButton("Clear", 1)
+
+        val comboBox = createComboBox(listOf("First", "Second", "Third"))
+        GridPane.setConstraints(comboBox, 2, 2)
+        root.children.add(comboBox)
+
         submit.onMouseClicked = EventHandler {
             println(name.text)
             println(lastName.text)
@@ -43,19 +51,43 @@ class HomePage(stage: Stage, width: Double, height: Double) {
         return grid
     }
 
-    private fun createTextField(grid: GridPane, title: String, gridRow: Int, gridColumn: Int = 0): TextField {
+    private fun createTextField(title: String, gridRow: Int, gridColumn: Int = 0): TextField {
         val textField = TextField()
         textField.promptText = title
         GridPane.setConstraints(textField, gridColumn, gridRow)
-        grid.children.add(textField)
+        root.children.add(textField)
         return textField
     }
 
-    private fun createButton(grid: GridPane, text: String, gridRow: Int, gridColumn: Int = 1): Button {
+    private fun createButton(text: String, gridRow: Int, gridColumn: Int = 1): Button {
         val button = Button(text)
         GridPane.setConstraints(button, gridColumn, gridRow)
-        grid.children.add(button)
+        root.children.add(button)
         return button
+    }
+
+    private fun createComboBox(data: List<String>, gridRow: Int = 2, gridColumn: Int = 2): ComboBox<String> {
+        val comboBox = ComboBox(FXCollections.observableArrayList(data))
+        comboBox.isEditable = true
+
+        comboBox.onMouseMoved = EventHandler {
+            comboBox.show()
+        }
+        comboBox.addEventHandler(KeyEvent.KEY_RELEASED) {
+            comboBox.items = data
+                .filter { it.toLowerCase().contains(comboBox.editor.text.toLowerCase()) }
+                .toCollection(FXCollections.observableArrayList())
+            comboBox.show()
+        }
+        comboBox.onMouseMoved = EventHandler {
+            if (data.none { comboBox.editor.text == it }) {
+                comboBox.editor.text = ""
+            }
+        }
+
+        GridPane.setConstraints(comboBox, gridRow, gridColumn)
+        root.children.add(comboBox)
+        return comboBox
     }
 
     fun close() {
