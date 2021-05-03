@@ -7,6 +7,7 @@ import javafx.geometry.Insets
 import javafx.scene.Scene
 import javafx.scene.control.Button
 import javafx.scene.control.ComboBox
+import javafx.scene.control.Label
 import javafx.scene.control.TextField
 import javafx.scene.input.KeyEvent
 import javafx.scene.layout.GridPane
@@ -17,6 +18,7 @@ import java.io.File
 
 class HomePage(stage: Stage, width: Double, height: Double) {
     val root = createGrid()
+    var errorMessageRow = 4
     private var graphPage: GraphPage? = null
     private val jsonString: String = File("./src/main/resources/city.list.json").readText(Charsets.UTF_8)
     private val cities =
@@ -32,20 +34,36 @@ class HomePage(stage: Stage, width: Double, height: Double) {
         val clear = createButton("Clear", 1)
 
         submit.onMouseClicked = EventHandler {
-            println(dayBefore.text)
-            println(dayAfter.text)
-            val coordinates = cities.first { it["name"] == comboBox.editor.text }["coord"] as Map<String, Double>
-            print(coordinates["lon"].toString() + "   " + coordinates["lat"].toString())
+            try {
+                val dayBeforeValue = dayBefore.text.toLong()
+                val dayAfterValue = dayAfter.text.toLong()
 
-            graphPage =
-                GraphPage(dayBefore.text.toLong(), dayAfter.text.toLong(), coordinates["lon"]!!, coordinates["lat"]!!)
-            stage.scene = Scene(graphPage?.root, width, height)
+                val coordinates = cities.first { it["name"] == comboBox.editor.text }["coord"] as Map<String, Double>
+                val lonValue = coordinates["lon"]!!
+                val latValue = coordinates["lat"]!!
+
+                if (dayAfterValue > 10 || dayBeforeValue > 10) {
+                    informUser("Not recommend set day value more then 10 (will load to long)")
+                    return@EventHandler
+                }
+
+                graphPage = GraphPage(dayBeforeValue, dayAfterValue, lonValue, latValue)
+                stage.scene = Scene(graphPage?.root, width, height)
+            } catch (e: Exception) {
+                informUser("Invalid values entered")
+            }
         }
         clear.onMouseClicked = EventHandler {
             comboBox.editor.text = ""
             dayBefore.text = ""
             dayAfter.text = ""
         }
+    }
+
+    private fun informUser(text: String) {
+        val label = Label(text)
+        GridPane.setConstraints(label, 4, errorMessageRow++)
+        root.children.add(label)
     }
 
     private fun createGrid(): GridPane {
