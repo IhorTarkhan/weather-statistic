@@ -37,7 +37,7 @@ class Graph(
                 XYChart.Data(it.first.format(formatter), it.second)
             })
             series.data.sortBy {
-                LocalDateTime.parse(it.xValue, formatter);
+                LocalDateTime.parse(it.xValue, formatter)
             }
 
             if (!isAutoRanging) {

@@ -10,21 +10,21 @@ import java.util.*
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
-val weatherService = WeatherService()
-
 class GraphPage {
     val root = GridPane()
+    private val xTitle = "Day, Hour"
+    private val weatherService = WeatherService()
     private val scheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
 
     private val temperatureGraphOneThread =
-        Graph("Day, Time", "Temperature, C", "Average temperature in hour", "One Thread Charts")
+        Graph(xTitle, "Temperature, C", "Average temperature in hour", "Temperature(One Thread Charts)")
     private val temperatureGraphMultiThread =
-        Graph("Day, Time", "Temperature, C", "Average temperature in hour", "Multi Thread Charts")
+        Graph(xTitle, "Temperature, C", "Average temperature in hour", "Temperature(Multi Thread Charts)")
 
     private val pressureGraphOneThread =
-        Graph("Day, Time", "Pressure, x", "Average pressure in hour", "One Thread Charts", false)
+        Graph(xTitle, "Pressure, Pa", "Average pressure in hour", "Pressure(One Thread Charts)", false)
     private val pressureGraphMultiThread =
-        Graph("Day, Time", "Pressure, x", "Average pressure in hour", "Multi Thread Charts", false)
+        Graph(xTitle, "Pressure, Pa", "Average pressure in hour", "Pressure(Multi Thread Charts)", false)
 
     init {
         GridPane.setConstraints(temperatureGraphOneThread.instance, 0, 0)
@@ -48,35 +48,43 @@ class GraphPage {
             .map { now.minusDays(it.toLong()) }
             .toCollection(LinkedList())
 
-        val linkedListForOneThreadTemperature = LinkedList(requestsDates)
-        scheduledExecutorService.scheduleAtFixedRate({
-            if (linkedListForOneThreadTemperature.isNotEmpty()) {
-                val dateTime = linkedListForOneThreadTemperature.poll()
-                val response = weatherService.getWeather(latitude, longitude, dateTime)
-                temperatureGraphOneThread.addPointAll(response.map(this::transformTemperature))
-            }
-        }, 0, 100, TimeUnit.MILLISECONDS)
+        Thread {
+            val linkedListForOneThreadTemperature = LinkedList(requestsDates)
+            scheduledExecutorService.scheduleAtFixedRate({
+                if (linkedListForOneThreadTemperature.isNotEmpty()) {
+                    val dateTime = linkedListForOneThreadTemperature.poll()
+                    val response = weatherService.getWeather(latitude, longitude, dateTime)
+                    temperatureGraphOneThread.addPointAll(response.map(this::transformTemperature))
+                }
+            }, 0, 100, TimeUnit.MILLISECONDS)
+        }.run()
 
-        val linkedListForOneThreadPressure = LinkedList(requestsDates)
-        scheduledExecutorService.scheduleAtFixedRate({
-            if (linkedListForOneThreadPressure.isNotEmpty()) {
-                val dateTime = linkedListForOneThreadPressure.poll()
-                val response = weatherService.getWeather(latitude, longitude, dateTime)
-                pressureGraphOneThread.addPointAll(response.map(this::transformPressure))
-            }
-        }, 0, 100, TimeUnit.MILLISECONDS)
+        Thread {
+            val linkedListForOneThreadPressure = LinkedList(requestsDates)
+            scheduledExecutorService.scheduleAtFixedRate({
+                if (linkedListForOneThreadPressure.isNotEmpty()) {
+                    val dateTime = linkedListForOneThreadPressure.poll()
+                    val response = weatherService.getWeather(latitude, longitude, dateTime)
+                    pressureGraphOneThread.addPointAll(response.map(this::transformPressure))
+                }
+            }, 0, 100, TimeUnit.MILLISECONDS)
+        }.run()
 
-        requestsDates.parallelStream().forEach {
-            weatherService.getWeatherAsync(latitude, longitude, it) { response ->
-                temperatureGraphMultiThread.addPointAll(response.map(this::transformTemperature))
+        Thread {
+            requestsDates.parallelStream().forEach {
+                weatherService.getWeatherAsync(latitude, longitude, it) { response ->
+                    temperatureGraphMultiThread.addPointAll(response.map(this::transformTemperature))
+                }
             }
-        }
+        }.run()
 
-        requestsDates.parallelStream().forEach {
-            weatherService.getWeatherAsync(latitude, longitude, it) { response ->
-                pressureGraphMultiThread.addPointAll(response.map(this::transformPressure))
+        Thread {
+            requestsDates.parallelStream().forEach {
+                weatherService.getWeatherAsync(latitude, longitude, it) { response ->
+                    pressureGraphMultiThread.addPointAll(response.map(this::transformPressure))
+                }
             }
-        }
+        }.run()
     }
 
     private fun transformTemperature(newData: WeatherDataDto) =
