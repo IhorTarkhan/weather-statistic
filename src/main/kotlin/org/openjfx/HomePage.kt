@@ -15,12 +15,12 @@ class HomePage(stage: Stage, width: Double, height: Double) {
     private var graphPage: GraphPage? = null
 
     init {
-        val name = createTextField(root, "Enter your first name.", 0, 0)
-        val lastName = createTextField(root, "Enter your last name.", 0, 1)
-        val comment = createTextField(root, "Enter your comment.", 0, 2)
+        val name = createTextField(root, "Enter your first name.", 0)
+        val lastName = createTextField(root, "Enter your last name.", 1)
+        val comment = createTextField(root, "Enter your comment.", 2)
 
-        val submit = createButton(root, "Submit", 1, 0)
-        val clear = createButton(root, "Clear", 1, 1)
+        val submit = createButton(root, "Submit", 0)
+        val clear = createButton(root, "Clear", 1)
         submit.onMouseClicked = EventHandler {
             println(name.text)
             println(lastName.text)
@@ -43,7 +43,7 @@ class HomePage(stage: Stage, width: Double, height: Double) {
         return grid
     }
 
-    private fun createTextField(grid: GridPane, title: String, gridColumn: Int, gridRow: Int): TextField {
+    private fun createTextField(grid: GridPane, title: String, gridRow: Int, gridColumn: Int = 0): TextField {
         val textField = TextField()
         textField.promptText = title
         GridPane.setConstraints(textField, gridColumn, gridRow)
@@ -51,7 +51,7 @@ class HomePage(stage: Stage, width: Double, height: Double) {
         return textField
     }
 
-    private fun createButton(grid: GridPane, text: String, gridColumn: Int, gridRow: Int): Button {
+    private fun createButton(grid: GridPane, text: String, gridRow: Int, gridColumn: Int = 1): Button {
         val button = Button(text)
         GridPane.setConstraints(button, gridColumn, gridRow)
         grid.children.add(button)

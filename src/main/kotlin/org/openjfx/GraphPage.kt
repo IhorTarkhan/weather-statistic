@@ -3,7 +3,9 @@ package org.openjfx
 import javafx.scene.layout.GridPane
 import org.openjfx.dto.WeatherDataDto
 import org.openjfx.service.WeatherService
+import java.time.Instant.ofEpochSecond
 import java.time.LocalDateTime
+import java.time.LocalDateTime.ofInstant
 import java.util.*
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -20,13 +22,15 @@ class GraphPage {
         Graph("Day, Time", "Temperature, C", "Average temperature in hour", "Multi Thread Charts")
 
     private val pressureGraphOneThread =
-        Graph("Day, Time", "Pressure, x", "Average pressure in hour", "One Thread Charts")
+        Graph("Day, Time", "Pressure, x", "Average pressure in hour", "One Thread Charts", false)
     private val pressureGraphMultiThread =
-        Graph("Day, Time", "Pressure, x", "Average pressure in hour", "Multi Thread Charts")
+        Graph("Day, Time", "Pressure, x", "Average pressure in hour", "Multi Thread Charts", false)
 
     init {
         GridPane.setConstraints(temperatureGraphOneThread.instance, 0, 0)
         root.children.add(temperatureGraphOneThread.instance)
+
+
         GridPane.setConstraints(temperatureGraphMultiThread.instance, 1, 0)
         root.children.add(temperatureGraphMultiThread.instance)
 
@@ -44,46 +48,51 @@ class GraphPage {
             .map { now.minusDays(it.toLong()) }
             .toCollection(LinkedList())
 
+        val linkedListForOneThreadTemperature = LinkedList(requestsDates)
         scheduledExecutorService.scheduleAtFixedRate({
-            if (requestsDates.isNotEmpty()) {
-                val dateTime = requestsDates.poll()
+            if (linkedListForOneThreadTemperature.isNotEmpty()) {
+                val dateTime = linkedListForOneThreadTemperature.poll()
                 val response = weatherService.getWeather(latitude, longitude, dateTime)
-                temperatureGraphOneThread.addPointAll(response.hourly.data.map(this::transformTemperature))
+                temperatureGraphOneThread.addPointAll(response.map(this::transformTemperature))
             }
-        }, 0, 1, TimeUnit.MILLISECONDS)
+        }, 0, 100, TimeUnit.MILLISECONDS)
 
-
+        val linkedListForOneThreadPressure = LinkedList(requestsDates)
         scheduledExecutorService.scheduleAtFixedRate({
-            if (requestsDates.isNotEmpty()) {
-                val dateTime = requestsDates.poll()
+            if (linkedListForOneThreadPressure.isNotEmpty()) {
+                val dateTime = linkedListForOneThreadPressure.poll()
                 val response = weatherService.getWeather(latitude, longitude, dateTime)
-                pressureGraphOneThread.addPointAll(response.hourly.data.map(this::transformPressure))
+                pressureGraphOneThread.addPointAll(response.map(this::transformPressure))
             }
-        }, 0, 1, TimeUnit.MILLISECONDS)
+        }, 0, 100, TimeUnit.MILLISECONDS)
 
         requestsDates.parallelStream().forEach {
             weatherService.getWeatherAsync(latitude, longitude, it) { response ->
-                temperatureGraphMultiThread.addPointAll(response.hourly.data.map(this::transformTemperature))
+                temperatureGraphMultiThread.addPointAll(response.map(this::transformTemperature))
             }
         }
 
         requestsDates.parallelStream().forEach {
             weatherService.getWeatherAsync(latitude, longitude, it) { response ->
-                pressureGraphMultiThread.addPointAll(response.hourly.data.map(this::transformPressure))
+                pressureGraphMultiThread.addPointAll(response.map(this::transformPressure))
             }
         }
     }
 
     private fun transformTemperature(newData: WeatherDataDto) =
         Pair(
-            newData.time.toString(),
-            newData.temperature.toInt()
+            ofInstant(
+                ofEpochSecond(newData.time),
+                TimeZone.getTimeZone(newData.timezone).toZoneId()
+            ), newData.temperature
         )
 
     private fun transformPressure(newData: WeatherDataDto) =
         Pair(
-            newData.time.toString(),
-            newData.pressure.toInt()
+            ofInstant(
+                ofEpochSecond(newData.time),
+                TimeZone.getTimeZone(newData.timezone).toZoneId()
+            ), newData.pressure
         )
 
     fun close() {

@@ -4,6 +4,7 @@ import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.Request
 import okhttp3.Response
+import org.openjfx.dto.WeatherDataDto
 import org.openjfx.dto.WeatherResponseDto
 import org.openjfx.property.DarkSkyProperty
 import org.openjfx.util.UtilGson
@@ -12,7 +13,7 @@ import java.io.IOException
 import java.time.LocalDateTime
 
 class WeatherService {
-    fun getWeather(latitude: Double, longitude: Double, dateTime: LocalDateTime): WeatherResponseDto {
+    fun getWeather(latitude: Double, longitude: Double, dateTime: LocalDateTime): List<WeatherDataDto> {
         val request = getRequest(latitude, longitude, dateTime)
         return call(request)
     }
@@ -21,7 +22,7 @@ class WeatherService {
         latitude: Double,
         longitude: Double,
         dateTime: LocalDateTime,
-        onResponse: (WeatherResponseDto) -> Unit
+        onResponse: (List<WeatherDataDto>) -> Unit
     ) {
         val request = getRequest(latitude, longitude, dateTime)
         UtilHttpClient.httpClientInstance.newCall(request).enqueue(object : Callback {
@@ -44,16 +45,19 @@ class WeatherService {
             .build()
     }
 
-    private fun call(request: Request): WeatherResponseDto {
-        val responseDto: WeatherResponseDto
+    private fun call(request: Request): List<WeatherDataDto> {
+        val responses: List<WeatherDataDto>
         UtilHttpClient.httpClientInstance.newCall(request).execute().use { response ->
-            responseDto = getDto(response)
+            responses = getDto(response)
         }
-        return responseDto
+        return responses
     }
 
-    private fun getDto(response: Response): WeatherResponseDto {
+    private fun getDto(response: Response): List<WeatherDataDto> {
         if (!response.isSuccessful) throw IOException("Unexpected code $response")
-        return UtilGson.gsonInstance.fromJson(response.body()?.string() ?: "{}", WeatherResponseDto::class.java)
+        val responseDto =
+            UtilGson.gsonInstance.fromJson(response.body()?.string() ?: "{}", WeatherResponseDto::class.java)
+        responseDto.hourly.data.forEach { it.timezone = responseDto.timezone }
+        return responseDto.hourly.data
     }
 }
