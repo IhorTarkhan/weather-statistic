@@ -21,9 +21,10 @@ class Graph(xTitle: String, yTitle: String, seriesTitle: String, chartsTitle: St
         instance.data.add(series)
     }
 
-    fun addPoint(xValue: String, yValue: Int) {
+    fun addPointAll(pairs: List<Pair<String, Int>>) {
         Platform.runLater {
-            series.data.add(XYChart.Data(xValue, yValue))
+            series.data.addAll(pairs.map { XYChart.Data(it.first, it.second) })
+            series.data.sortBy { it.xValue }
         }
     }
 
