@@ -1,4 +1,4 @@
-package org.openjfx
+package org.openjfx.ui
 
 
 import javafx.application.Application
@@ -6,7 +6,7 @@ import javafx.scene.Scene
 import javafx.stage.Stage
 
 
-open class UI : Application() {
+open class StageWrapper : Application() {
     private var homePage: HomePage? = null
 
     override fun start(stage: Stage) {

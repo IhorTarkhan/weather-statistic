@@ -1,4 +1,4 @@
-package org.openjfx
+package org.openjfx.ui
 
 
 import javafx.collections.FXCollections

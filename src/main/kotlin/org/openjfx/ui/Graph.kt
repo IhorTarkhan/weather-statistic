@@ -1,4 +1,4 @@
-package org.openjfx
+package org.openjfx.ui
 
 import javafx.application.Platform
 import javafx.scene.chart.CategoryAxis

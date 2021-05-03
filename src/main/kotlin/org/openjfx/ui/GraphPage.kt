@@ -1,4 +1,4 @@
-package org.openjfx
+package org.openjfx.ui
 
 import javafx.scene.layout.GridPane
 import org.openjfx.dto.WeatherDataDto
